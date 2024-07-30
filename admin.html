@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+            flex-direction: column;
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <button class="button" onclick="goHome()">Back to Home</button>
+    <button class="button" onclick="showAddForm()">Add User</button>
+    <button class="button" onclick="showDeleteForm()">Delete User</button>
+    
+    <h2>All Users</h2>
+    <table id="userTable">
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Phone</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody">
+            <!-- User entries will be injected here -->
+        </tbody>
+    </table>
+
+    <div id="addForm" style="display:none;">
+        <h3>Add User</h3>
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" id="name">
+        </div>
+        <div>
+            <label for="phone">Phone:</label>
+            <input type="text" id="phone">
+        </div>
+        <button class="button" onclick="submitAddForm()">Submit</button>
+    </div>
+
+    <div id="deleteForm" style="display:none;">
+        <h3>Delete User</h3>
+        <button class="button" onclick="submitDeleteForm()">Delete Selected User</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/listUsers')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('userTableBody');
+                    tableBody.innerHTML = ''; // Clear the table body
+                    for (const [id, user] of Object.entries(data)) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><input type="radio" name="userId" value="${id}"></td>
+                            <td>${id}</td>
+                            <td>${user.name}</td>
+                            <td>${user.phone}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    }
+                });
+        });
+
+        function showAddForm() {
+            document.getElementById('addForm').style.display = 'block';
+            document.getElementById('deleteForm').style.display = 'none';
+        }
+
+        function showDeleteForm() {
+            document.getElementById('addForm').style.display = 'none';
+            document.getElementById('deleteForm').style.display = 'block';
+        }
+
+        function submitAddForm() {
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const phonePattern = /^[0-9]{10}$/; // Example regex for a 10-digit phone number
+
+            if (!name || !phonePattern.test(phone)) {
+                alert('Please enter a valid name and 10-digit phone number.');
+                return;
+            }
+
+            fetch('/addUser', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, phone })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    alert(`User added with ID: ${data.id}`);
+                    window.location.reload(); // Reload to update the user list
+                }
+            });
+        }
+
+        function submitDeleteForm() {
+            const selectedRadio = document.querySelector('input[name="userId"]:checked');
+            if (!selectedRadio) {
+                alert('Please select a user to delete.');
+                return;
+            }
+            const id = selectedRadio.value;
+
+            if (confirm(`Are you sure you want to delete user with ID ${id}?`)) {
+                fetch(`/deleteUser/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('User deleted successfully.');
+                        window.location.reload(); // Reload to update the user list
+                    } else {
+                        alert('ERROR: ID not found.');
+                    }
+                });
+            }
+        }
+
+        function goHome() {
+            window.location.href = '/'; // Redirect to home page
+        }
+    </script>
+</body>
+</html>
