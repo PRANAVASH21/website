@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+            position: relative;
+        }
+        .container {
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .button {
+            position: absolute;
+            top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .home-button {
+            right: 80px;
+        }
+        .admin-button {
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Buttons for Home and Admin -->
+    <button class="button home-button hidden" onclick="goHome()">Home</button>
+    <button class="button admin-button hidden" onclick="showAdminForm()">Admin</button>
+
+    <div class="container">
+        <button onclick="showAddForm()">ADD</button>
+        <button onclick="showViewForm()">VIEW</button>
+        
+        <div id="addForm" class="hidden">
+            <h2>Add User</h2>
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name">
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <input type="text" id="phone">
+            </div>
+            <button onclick="submitAddForm()">Submit</button>
+        </div>
+        
+        <div id="viewForm" class="hidden">
+            <h2>View User</h2>
+            <div class="form-group">
+                <label for="id">Unique ID:</label>
+                <input type="text" id="id">
+            </div>
+            <button onclick="submitViewForm()">Submit</button>
+        </div>
+
+        <div id="adminForm" class="hidden">
+            <h2>Admin Login</h2>
+            <div class="form-group">
+                <label for="adminId">Admin ID:</label>
+                <input type="text" id="adminId">
+            </div>
+            <div class="form-group">
+                <label for="adminPassword">Password:</label>
+                <input type="password" id="adminPassword">
+            </div>
+            <button onclick="submitAdminForm()">Login</button>
+        </div>
+    </div>
+
+    <script>
+        function showAddForm() {
+            document.querySelector('.home-button').classList.remove('hidden');
+            document.querySelector('.admin-button').classList.remove('hidden');
+            document.getElementById('addForm').classList.remove('hidden');
+            document.getElementById('viewForm').classList.add('hidden');
+            document.getElementById('adminForm').classList.add('hidden');
+        }
+
+        function showViewForm() {
+            document.querySelector('.home-button').classList.remove('hidden');
+            document.querySelector('.admin-button').classList.remove('hidden');
+            document.getElementById('viewForm').classList.remove('hidden');
+            document.getElementById('addForm').classList.add('hidden');
+            document.getElementById('adminForm').classList.add('hidden');
+        }
+
+        function showAdminForm() {
+            document.querySelector('.home-button').classList.remove('hidden');
+            document.querySelector('.admin-button').classList.add('hidden');
+            document.getElementById('adminForm').classList.remove('hidden');
+            document.getElementById('addForm').classList.add('hidden');
+            document.getElementById('viewForm').classList.add('hidden');
+        }
+
+        function submitAddForm() {
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const phonePattern = /^[0-9]{10}$/; // Example regex for a 10-digit phone number
+
+            if (!name || !phonePattern.test(phone)) {
+                alert('Please enter a valid name and 10-digit phone number.');
+                return;
+            }
+
+            fetch('/addUser', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, phone })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    alert(`Your ID is ${data.id}.`);
+                    setTimeout(() => {
+                        window.location.href = '/'; // Redirect to home page
+                    }, 20000); // Redirect after 20 seconds
+                }
+            });
+        }
+
+        function submitViewForm() {
+            const id = document.getElementById('id').value;
+
+            fetch(`/getUser/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('ERROR: ID not found.');
+                        window.location.href = '/'; // Redirect to home page
+                    } else {
+                        alert(`Name: ${data.name}, Phone: ${data.phone}`);
+                    }
+                });
+        }
+
+        function submitAdminForm() {
+            const adminId = document.getElementById('adminId').value;
+            const adminPassword = document.getElementById('adminPassword').value;
+
+            fetch('/adminLogin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: adminId, password: adminPassword })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Admin login successful!');
+                    window.location.href = '/admin'; // Redirect to admin page
+                } else {
+                    alert('ERROR: Invalid credentials.');
+                }
+            });
+        }
+
+        function goHome() {
+            window.location.href = '/'; // Redirect to home page
+        }
+    </script>
+</body>
+</html>
